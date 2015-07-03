@@ -1,0 +1,4 @@
+Buffer + Indeks -> Stream
+
+Stream ≈ {Input,Output}Stream
+AMF? ≈ Data{Input,Output}Stream

@@ -8,6 +8,8 @@ var AMF3 = require("../lib/AMF3");
 var HALF = [0x3f, 0xe0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
 var ONE = [0x3f, 0xf0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
 
+var NAME = [78, 97, 109, 101]; // "Name"
+var PROPERTY = [112, 114, 111, 112, 101, 114, 116, 121]; // "property"
 var EURO = [0xE2, 0x82, 0xAC]; // "€"
 
 describe("AMF3.Writer", function() {
@@ -95,16 +97,19 @@ describe("AMF3.Writer", function() {
 		));
 	});
 	
-	/*
 	// u8 marker, u32 length * values
 	it("can write anonymous", function() {
 		var writer = new AMF3.Writer([]);
 		var data = {};
 		data["property"] = data; // self reference
 		writer.write(data);
-		expect(writer.array).toEqual([AMF3.MARKER.OBJECT].concat(PROPERTY, [AMF3.MARKER.REFERENCE], [0x00, 0x00], EMPTY, [AMF3.MARKER.OBJECT_END]));
+		expect(writer.array).toEqual([].concat(
+			[AMF3.MARKER.OBJECT], [0 << 4 | true << 3 | false << 2 | 0x03], [0 << 1 | 1], // 0 properties, dynamic, !externalizable, no name
+			[8 << 1 | 1], PROPERTY, [AMF3.MARKER.OBJECT], [0 << 1 | 0], [0 << 1 | 1] // dynamic members: self reference, then empty string
+		));
 	});
 	
+	/*
 	// u8 marker, u32 length * values
 	it("can write typed", function() {
 		var writer = new AMF3.Writer([]);
@@ -181,15 +186,17 @@ describe("AMF3.Reader", function() {
 		expect(data).toEqual([data]);
 	});
 	
-	/*
 	// u8 marker, u32 length * values
 	it("can read anonymous", function() {
-		var reader = new AMF3.Reader([AMF3.MARKER.OBJECT].concat(PROPERTY, [AMF3.MARKER.REFERENCE], [0x00, 0x00], EMPTY, [AMF3.MARKER.OBJECT_END]));
+		var reader = new AMF3.Reader([].concat(
+			[AMF3.MARKER.OBJECT], [0 << 4 | true << 3 | false << 2 | 0x03], [0 << 1 | 1], // 0 properties, dynamic, !externalizable, no name
+			[8 << 1 | 1], PROPERTY, [AMF3.MARKER.OBJECT], [0 << 1 | 0], [0 << 1 | 1] // dynamic members: self reference, then empty string
+		));
 		var data = reader.read();
-		expect(data).toEqual({"property": data});
-		expect(data["@traits"]).toEqual(AMF.DEFAULT_TRAITS);
+		expect(data).toEqual({"@name": "", "@externalizable": false, "@dynamic": true, "@properties": [], "property": data});
 	});
 	
+	/*
 	// u8 marker, u32 length * values
 	it("can read typed", function() {
 		var reader = new AMF3.Reader([AMF3.MARKER.TYPED_OBJECT].concat(NAME, PROPERTY, [AMF3.MARKER.REFERENCE], [0x00, 0x00], EMPTY, [AMF3.MARKER.OBJECT_END]));

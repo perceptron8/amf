@@ -126,17 +126,21 @@ describe("AMF3.Writer", function() {
 		));
 	});
 	
-	/*
-	// u8 marker, u32 length * values
+	// u8 marker, traits, properties
 	it("can write typed", function() {
 		var writer = new AMF3.Writer([]);
 		var data = {};
 		data["@name"] = "Name";
+		data["@properties"] = ["property"];
 		data["property"] = data; // self reference
 		writer.write(data);
-		expect(writer.array).toEqual([AMF3.MARKER.TYPED_OBJECT].concat(NAME, PROPERTY, [AMF3.MARKER.REFERENCE], [0x00, 0x00], EMPTY, [AMF3.MARKER.OBJECT_END]));
+		expect(writer.array).toEqual([].concat(
+			[AMF3.MARKER.OBJECT], [1 << 4 | true << 3 | false << 2 | 0x03], [4 << 1 | 1], NAME, // 1 property, dynamic, !externalizable, "Name"
+			[8 << 1 | 1], PROPERTY, // list of properties
+			[AMF3.MARKER.OBJECT], [0 << 1 | 0], // self-reference
+			[0 << 1 | 1] // end of dynamic members
+		));
 	});
-	*/
 });
 
 describe("AMF3.Reader", function() {
@@ -225,15 +229,17 @@ describe("AMF3.Reader", function() {
 		expect(data).toEqual({"@name": "", "@externalizable": false, "@dynamic": true, "@properties": [], "property": data});
 	});
 	
-	/*
-	// u8 marker, u32 length * values
+	// u8 marker, traits, properties
 	it("can read typed", function() {
-		var reader = new AMF3.Reader([AMF3.MARKER.TYPED_OBJECT].concat(NAME, PROPERTY, [AMF3.MARKER.REFERENCE], [0x00, 0x00], EMPTY, [AMF3.MARKER.OBJECT_END]));
+		var reader = new AMF3.Reader([].concat(
+			[AMF3.MARKER.OBJECT], [1 << 4 | true << 3 | false << 2 | 0x03], [4 << 1 | 1], NAME, // 1 property, dynamic, !externalizable, "Name"
+			[8 << 1 | 1], PROPERTY, // list of properties
+			[AMF3.MARKER.OBJECT], [0 << 1 | 0], // self-reference
+			[0 << 1 | 1] // end of dynamic members
+		));
 		var data = reader.read();
-		expect(data["@name"]).toEqual("Name");
-		expect(data["property"]).toEqual(data);
+		expect(data).toEqual({"@name": "Name", "@externalizable": false, "@dynamic": true, "@properties": ["property"], "property": data});
 	});
-	 */
 });
 
 describe("AMF3", function() {

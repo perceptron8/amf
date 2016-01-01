@@ -1,12 +1,13 @@
 {
   "name" : "amf",
   "version" : "0.0.1",
+  "private": true,
   "dependencies": {
     "underscore" : "^1.8.3",
     "text-encoding": "^0.5.2",
     "number-encoding": "perceptron8/number-encoding"
   },
   "devDependencies": {
-    "underscore.string" : "^3.1.1"
+    "underscore.string" : "^3.2.2"
   }
 }

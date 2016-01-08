@@ -1,19 +1,11 @@
 "use strict";
 
 var _ = require("underscore");
-var _s = require("underscore.string");
 
 var AMF3 = require("../lib/AMF3");
 
-var HALF = [0x3f, 0xe0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
-var ONE = [0x3f, 0xf0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
-
 var INTEGER_MIN = -Math.pow(2, 28);
 var INTEGER_MAX = +Math.pow(2, 28) - 1;
-
-var NAME = [78, 97, 109, 101]; // "Name"
-var PROPERTY = [112, 114, 111, 112, 101, 114, 116, 121]; // "property"
-var EURO = [0xE2, 0x82, 0xAC]; // "€"
 
 function pullFrom(array) {
 	return function(length) {
@@ -30,262 +22,19 @@ function pushTo(array) {
 	}
 }
 
-describe("AMF3.Reader", function() {
-	// u8 marker
-	it("can read null", function() {
-		var array = [AMF3.MARKER.NULL];
-		var reader = new AMF3.Reader(pullFrom(array));
-		expect(reader.read()).toEqual(null);
-	});
-	
-	// u8 marker
-	it("can read undefined", function() {
-		var array = [AMF3.MARKER.UNDEFINED];
-		var reader = new AMF3.Reader(pullFrom(array));
-		expect(reader.read()).toEqual(undefined);
-	});
-	
-	// u8 marker, u8 value
-	it("can read true", function() {
-		var array = [AMF3.MARKER.TRUE];
-		var reader = new AMF3.Reader(pullFrom(array));
-		expect(reader.read()).toEqual(true);
-	});
-	
-	// u8 marker, u8 value
-	it("can read false", function() {
-		var array = [AMF3.MARKER.FALSE];
-		var reader = new AMF3.Reader(pullFrom(array));
-		expect(reader.read()).toEqual(false);
-	});
-	
-	// u8 marker, u29 integer
-	it("can read positive integer", function() {
-		var array = [AMF3.MARKER.INTEGER].concat([0x01]);
-		var reader = new AMF3.Reader(pullFrom(array));
-		expect(reader.read()).toEqual(1);
-	});
-	
-	// u8 marker, u29 integer
-	it("can read negative integer", function() {
-		var array = [AMF3.MARKER.INTEGER].concat([0xFF, 0xFF, 0xFF, 0xFF]);
-		var reader = new AMF3.Reader(pullFrom(array));
-		expect(reader.read()).toEqual(-1);
-	});
-	
-	// u8 marker, u29 integer
-	it("can read positive big integer", function() {
-		var array = [AMF3.MARKER.INTEGER].concat([0xBF, 0xFF, 0xFF, 0xFF]);
-		var reader = new AMF3.Reader(pullFrom(array));
-		expect(reader.read()).toEqual(INTEGER_MAX);
-	});
-	
-	// u8 marker, u29 integer
-	it("can read negative big integer", function() {
-		var array = [AMF3.MARKER.INTEGER].concat([0xC0, 0x80, 0x80, 0x00]);
-		var reader = new AMF3.Reader(pullFrom(array));
-		expect(reader.read()).toEqual(INTEGER_MIN);
-	});
-	
-	// u8 marker, f64 double
-	it("can read double", function() {
-		var array = [AMF3.MARKER.DOUBLE].concat(HALF);
-		var reader = new AMF3.Reader(pullFrom(array));
-		expect(reader.read()).toEqual(0.5);
-	});
-	
-	// u8 marker, u29 reference, f64 epochMilli
-	it("can read date", function() {
-		var array = [AMF3.MARKER.DATE].concat([0 << 1 | 1], ONE, [AMF3.MARKER.DATE],[0 << 1 | 0]);
-		var reader = new AMF3.Reader(pullFrom(array));
-		expect(reader.read()).toEqual(new Date(1)); // by value
-		expect(reader.read()).toEqual(new Date(1)); // by reference
-	});
-	
-	// u8 marker, u29 length/reference * utf8 bytes
-	it("can read string", function() {
-		var array = [AMF3.MARKER.STRING].concat([3 << 1 | 1], EURO, [AMF3.MARKER.STRING], [0 << 1 | 0]);
-		var reader = new AMF3.Reader(pullFrom(array));
-		expect(reader.read()).toEqual("€"); // by value
-		expect(reader.read()).toEqual("€"); // by reference
-	});
-	
-	// u8 marker, u29 length/reference * values
-	it("can read array", function() {
-		var array = [AMF3.MARKER.ARRAY].concat([1 << 1 | 1], [0 << 1 | 1], [AMF3.MARKER.ARRAY], [0 << 1 | 0]);
-		var reader = new AMF3.Reader(pullFrom(array));
-		var data = reader.read();
-		expect(data).toEqual([data]);
-	});
-	
-	// u8 marker, empty traits, dynamic members
-	it("can read anonymous", function() {
-		var array = [].concat(
-			[AMF3.MARKER.OBJECT], [0 << 4 | true << 3 | false << 2 | 0x03], [0 << 1 | 1], // 0 properties, dynamic, !externalizable, no name
-			[8 << 1 | 1], PROPERTY, [AMF3.MARKER.OBJECT], [0 << 1 | 0], [0 << 1 | 1] // dynamic members: self reference, then empty string
-		);
-		var reader = new AMF3.Reader(pullFrom(array));
-		var data = reader.read();
-		expect(data).toEqual({"@name": "", "@externalizable": false, "@dynamic": true, "@properties": [], "property": data});
-	});
-	
-	// u8 marker, traits, properties
-	it("can read typed", function() {
-		var array = [].concat(
-			[AMF3.MARKER.OBJECT], [1 << 4 | true << 3 | false << 2 | 0x03], [4 << 1 | 1], NAME, // 1 property, dynamic, !externalizable, "Name"
-			[8 << 1 | 1], PROPERTY, // list of properties
-			[AMF3.MARKER.OBJECT], [0 << 1 | 0], // self-reference
-			[0 << 1 | 1] // end of dynamic members
-		);
-		var reader = new AMF3.Reader(pullFrom(array));
-		var data = reader.read();
-		expect(data).toEqual({"@name": "Name", "@externalizable": false, "@dynamic": true, "@properties": ["property"], "property": data});
-	});
-});
-
-describe("AMF3.Writer", function() {
-	// u8 marker
-	it("can write null", function() {
-		var array = [];
-		var writer = new AMF3.Writer(pushTo(array));
-		writer.write(null);
-		expect(array).toEqual([AMF3.MARKER.NULL]);
-	});
-	
-	// u8 marker
-	it("can write undefined", function() {
-		var array = [];
-		var writer = new AMF3.Writer(pushTo(array));
-		writer.write(undefined);
-		expect(array).toEqual([AMF3.MARKER.UNDEFINED]);
-	});
-	
-	// u8 marker, u8 value
-	it("can write true", function() {
-		var array = [];
-		var writer = new AMF3.Writer(pushTo(array));
-		writer.write(true);
-		expect(array).toEqual([AMF3.MARKER.TRUE]);
-	});
-	
-	// u8 marker, u8 value
-	it("can write false", function() {
-		var array = [];
-		var writer = new AMF3.Writer(pushTo(array));
-		writer.write(false);
-		expect(array).toEqual([AMF3.MARKER.FALSE]);
-	});
-	
-	// u8 marker, u29 integer
-	it("can write positive integer", function() {
-		var array = [];
-		var writer = new AMF3.Writer(pushTo(array));
-		writer.write(1);
-		expect(array).toEqual([AMF3.MARKER.INTEGER].concat([0x01]));
-	});
-	
-	// u8 marker, u29 integer
-	it("can write negative integer", function() {
-		var array = [];
-		var writer = new AMF3.Writer(pushTo(array));
-		writer.write(-1);
-		expect(array).toEqual([AMF3.MARKER.INTEGER].concat([0xFF, 0xFF, 0xFF, 0xFF]));
-	});
-	
-	// u8 marker, u29 integer
-	it("can write big integer", function() {
-		var array = [];
-		var writer = new AMF3.Writer(pushTo(array));
-		writer.write(INTEGER_MAX);
-		expect(array).toEqual([AMF3.MARKER.INTEGER].concat([0xBF, 0xFF, 0xFF, 0xFF]));
-	});
-	
-	// u8 marker, u29 integer
-	it("can write negative big integer", function() {
-		var array = [];
-		var writer = new AMF3.Writer(pushTo(array));
-		writer.write(INTEGER_MIN);
-		expect(array).toEqual([AMF3.MARKER.INTEGER].concat([0xC0, 0x80, 0x80, 0x00]));
-	});
-	
-	// u8 marker, f64 double
-	it("can write double", function() {
-		var array = [];
-		var writer = new AMF3.Writer(pushTo(array));
-		writer.write(0.5);
-		expect(array).toEqual([AMF3.MARKER.DOUBLE].concat(HALF));
-	});
-	
-	// u8 marker, u29 length/reference, f64 epochMilli
-	it("can write dates", function() {
-		var array = [];
-		var writer = new AMF3.Writer(pushTo(array));
-		var date = new Date(1);
-		writer.write(date); // by value 
-		writer.write(date); // by reference
-		expect(array).toEqual([].concat(
-			[AMF3.MARKER.DATE], [0 << 1 | 1], ONE,
-			[AMF3.MARKER.DATE], [0 << 1 | 0])
-		);
-	});
-	
-	// u8 marker, u29 length/reference * utf8 bytes
-	it("can write string", function() {
-		var array = [];
-		var writer = new AMF3.Writer(pushTo(array));
-		writer.write("€"); // by value
-		writer.write("€"); // by reference
-		expect(array).toEqual([].concat(
-			[AMF3.MARKER.STRING], [3 << 1 | 1], EURO, // by value
-			[AMF3.MARKER.STRING], [0 << 1 | 0] // by reference
-		));
-	});
-	
-	// u8 marker, u29 length/reference * values
-	it("can write array", function() {
-		var array = [];
-		var writer = new AMF3.Writer(pushTo(array));
-		var data = [];
-		data.push(data); // self reference
-		writer.write(data);
-		expect(array).toEqual([].concat(
-			[AMF3.MARKER.ARRAY], [1 << 1 | 1], [0 << 1 | 1], // length, empty associative part
-			[AMF3.MARKER.ARRAY], [0 << 1 | 0] // self-reference
-		));
-	});
-	
-	// u8 marker, empty traits, dynamic members
-	it("can write anonymous", function() {
-		var array = [];
-		var writer = new AMF3.Writer(pushTo(array));
-		var data = {};
-		data["property"] = data; // self reference
-		writer.write(data);
-		expect(array).toEqual([].concat(
-			[AMF3.MARKER.OBJECT], [0 << 4 | true << 3 | false << 2 | 0x03], [0 << 1 | 1], // 0 properties, dynamic, !externalizable, no name
-			[8 << 1 | 1], PROPERTY, [AMF3.MARKER.OBJECT], [0 << 1 | 0], [0 << 1 | 1] // dynamic members: self reference, then empty string
-		));
-	});
-	
-	// u8 marker, traits, properties
-	it("can write typed", function() {
-		var array = [];
-		var writer = new AMF3.Writer(pushTo(array));
-		var data = {};
-		data["@name"] = "Name";
-		data["@properties"] = ["property"];
-		data["property"] = data; // self reference
-		writer.write(data);
-		expect(array).toEqual([].concat(
-			[AMF3.MARKER.OBJECT], [1 << 4 | true << 3 | false << 2 | 0x03], [4 << 1 | 1], NAME, // 1 property, dynamic, !externalizable, "Name"
-			[8 << 1 | 1], PROPERTY, // list of properties
-			[AMF3.MARKER.OBJECT], [0 << 1 | 0], // self-reference
-			[0 << 1 | 1] // end of dynamic members
-		));
-	});
-});
-
 describe("AMF3", function() {
+	it("has Marker", function() {
+		expect(AMF3.Marker).toBeDefined();
+	});
+	
+	it("has Reader", function() {
+		expect(AMF3.Reader).toBeDefined();
+	});
+	
+	it("has Writer", function() {
+		expect(AMF3.Writer).toBeDefined();
+	});
+	
 	it("deals well with powers of two", function() {
 		var buffer = [];
 		var writer = new AMF3.Writer(pushTo(buffer));
@@ -302,8 +51,7 @@ describe("AMF3", function() {
 		var writer = new AMF3.Writer(pushTo(buffer));
 		var reader = new AMF3.Reader(pullFrom(buffer));
 		for (var t = 0; t < 100; t++) {
-			// TODO test negative values
-			var v = _.random(/*INTEGER_MIN, */INTEGER_MAX);
+			var v = _.random(INTEGER_MIN, INTEGER_MAX);
 			writer.write(v);
 			expect(reader.read()).toEqual(v);
 		}

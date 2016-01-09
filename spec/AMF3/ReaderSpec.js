@@ -81,10 +81,17 @@ describe("AMF3.Reader", function() {
 	
 	// u8 marker, u29 length/reference * utf8 bytes
 	it("can read string", function() {
-		var array = [AMF3.Marker.STRING].concat([3 << 1 | 1], Constants.EURO, [AMF3.Marker.STRING], [0 << 1 | 0]);
+		var array = [].concat([AMF3.Marker.STRING], [3 << 1 | 1], Constants.EURO, [AMF3.Marker.STRING], [0 << 1 | 0]);
 		var reader = new AMF3.Reader(Helpers.pullFrom(array));
 		expect(reader.read()).toEqual("€"); // by value
 		expect(reader.read()).toEqual("€"); // by reference
+	});
+	
+	it("can read empty string", function() {
+		var array = [].concat([AMF3.Marker.STRING], [0 << 1 | 1], [AMF3.Marker.STRING], [0 << 1 | 1]);
+		var reader = new AMF3.Reader(Helpers.pullFrom(array));
+		expect(reader.read()).toEqual(""); // by value
+		expect(reader.read()).toEqual(""); // by value
 	});
 	
 	// u8 marker, u29 length/reference * values

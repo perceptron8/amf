@@ -105,6 +105,18 @@ describe("AMF3.Writer", function() {
 		));
 	});
 	
+	// u8 marker, u29 length/reference * utf8 bytes
+	it("can write empty string", function() {
+		var array = [];
+		var writer = new AMF3.Writer(Helpers.pushTo(array));
+		writer.write(""); // by value
+		writer.write(""); // by value
+		expect(array).toEqual([].concat(
+			[AMF3.Marker.STRING], [0 << 1 | 1], // by value
+			[AMF3.Marker.STRING], [0 << 1 | 1] // by value
+		));
+	});
+	
 	// u8 marker, u29 length/reference * values
 	it("can write array", function() {
 		var array = [];

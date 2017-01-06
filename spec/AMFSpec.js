@@ -1,28 +1,27 @@
 "use strict";
 
-var AMF = require("../lib/AMF");
-var AMF0 = require("../lib/AMF0");
-var AMF3 = require("../lib/AMF3");
-var Helpers = require("./Helpers");
+const AMF = require("../lib/AMF");
+const AMF0 = require("../lib/AMF0");
+const AMF3 = require("../lib/AMF3");
+const Helpers = require("./Helpers");
 
-var TextEncoder = require("text-encoding").TextEncoder;
-var TextDecoder = require("text-encoding").TextDecoder;
-var NumberEncoder = require("number-encoding").NumberEncoder;
-var NumberDecoder = require("number-encoding").NumberDecoder;
+const TextEncoder = require("text-encoding").TextEncoder;
+const TextDecoder = require("text-encoding").TextDecoder;
+const NumberEncoder = require("number-encoding").NumberEncoder;
+const NumberDecoder = require("number-encoding").NumberDecoder;
 
-var utf8encoder = new TextEncoder("utf-8");
-var u16encoder = new NumberEncoder("Uint16");
-var u16encoder = new NumberEncoder("Uint16");
+const utf8encoder = new TextEncoder("utf-8");
+const u16encoder = new NumberEncoder("Uint16");
 
 // test data
 
-var header = new AMF.Header("name", "value");
-var message = new AMF.Message("targetUri", "responseUri");
-var packet = new AMF.Packet([header], [message]);
+const header = new AMF.Header("name", "value");
+const message = new AMF.Message("targetUri", "responseUri");
+const packet = new AMF.Packet([header], [message]);
 
-var UNKNOWN_LENGTH = [0xFF, 0xFF, 0xFF, 0xFF];
+const UNKNOWN_LENGTH = [0xFF, 0xFF, 0xFF, 0xFF];
 
-var chunks = [].concat([
+const chunks = [].concat([
 	// version
 	u16encoder.encode(packet.version),
 	// headers (length)
@@ -47,9 +46,9 @@ var chunks = [].concat([
 	[AMF3.Marker.UNDEFINED]
 ]);
 
-var buffer = [];
-for (var chunk of chunks) {
-	for (var byte of chunk) {
+const buffer = [];
+for (let chunk of chunks) {
+	for (let byte of chunk) {
 		buffer.push(byte);
 	}
 }
@@ -58,14 +57,14 @@ for (var chunk of chunks) {
 
 describe("AMF.Packet", function() {
 	it("can encode", function() {
-		var encoded = [];
-		var push = Helpers.pushTo(encoded);
+		const encoded = [];
+		const push = Helpers.pushTo(encoded);
 		packet.encode(push);
 		expect(encoded).toEqual(buffer);
 	});
 	it("can decode", function() {
-		var pull = Helpers.pullFrom(buffer);
-		var decoded = AMF.Packet.decode(pull);
+		const pull = Helpers.pullFrom(buffer);
+		const decoded = AMF.Packet.decode(pull);
 		expect(decoded).toEqual(packet);
 	});
 });

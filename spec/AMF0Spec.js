@@ -1,6 +1,6 @@
 "use strict";
 
-var AMF0 = require("../lib/AMF0");
+const AMF0 = require("../lib/AMF0");
 
 describe("AMF0", function() {
 	it("has Marker", function() {

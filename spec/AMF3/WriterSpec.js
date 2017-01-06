@@ -1,90 +1,90 @@
 "use strict";
 
-var _ = require("underscore");
-var _s = require("underscore.string");
+const _ = require("underscore");
+const _s = require("underscore.string");
 
-var AMF3 = require("../../lib/AMF3");
-var Helpers = require("../Helpers");
-var Constants = require("./Constants");
+const AMF3 = require("../../lib/AMF3");
+const Helpers = require("../Helpers");
+const Constants = require("./Constants");
 
 describe("AMF3.Writer", function() {
 	// u8 marker
 	it("can write null", function() {
-		var array = [];
-		var writer = new AMF3.Writer(Helpers.pushTo(array));
+		const array = [];
+		const writer = new AMF3.Writer(Helpers.pushTo(array));
 		writer.write(null);
 		expect(array).toEqual([AMF3.Marker.NULL]);
 	});
 	
 	// u8 marker
 	it("can write undefined", function() {
-		var array = [];
-		var writer = new AMF3.Writer(Helpers.pushTo(array));
+		const array = [];
+		const writer = new AMF3.Writer(Helpers.pushTo(array));
 		writer.write(undefined);
 		expect(array).toEqual([AMF3.Marker.UNDEFINED]);
 	});
 	
 	// u8 marker, u8 value
 	it("can write true", function() {
-		var array = [];
-		var writer = new AMF3.Writer(Helpers.pushTo(array));
+		const array = [];
+		const writer = new AMF3.Writer(Helpers.pushTo(array));
 		writer.write(true);
 		expect(array).toEqual([AMF3.Marker.TRUE]);
 	});
 	
 	// u8 marker, u8 value
 	it("can write false", function() {
-		var array = [];
-		var writer = new AMF3.Writer(Helpers.pushTo(array));
+		const array = [];
+		const writer = new AMF3.Writer(Helpers.pushTo(array));
 		writer.write(false);
 		expect(array).toEqual([AMF3.Marker.FALSE]);
 	});
 	
 	// u8 marker, u29 integer
 	it("can write positive integer", function() {
-		var array = [];
-		var writer = new AMF3.Writer(Helpers.pushTo(array));
+		const array = [];
+		const writer = new AMF3.Writer(Helpers.pushTo(array));
 		writer.write(1);
 		expect(array).toEqual([AMF3.Marker.INTEGER].concat([0x01]));
 	});
 	
 	// u8 marker, u29 integer
 	it("can write negative integer", function() {
-		var array = [];
-		var writer = new AMF3.Writer(Helpers.pushTo(array));
+		const array = [];
+		const writer = new AMF3.Writer(Helpers.pushTo(array));
 		writer.write(-1);
 		expect(array).toEqual([AMF3.Marker.INTEGER].concat([0xFF, 0xFF, 0xFF, 0xFF]));
 	});
 	
 	// u8 marker, u29 integer
 	it("can write big integer", function() {
-		var array = [];
-		var writer = new AMF3.Writer(Helpers.pushTo(array));
+		const array = [];
+		const writer = new AMF3.Writer(Helpers.pushTo(array));
 		writer.write(Constants.INTEGER_MAX);
 		expect(array).toEqual([AMF3.Marker.INTEGER].concat([0xBF, 0xFF, 0xFF, 0xFF]));
 	});
 	
 	// u8 marker, u29 integer
 	it("can write negative big integer", function() {
-		var array = [];
-		var writer = new AMF3.Writer(Helpers.pushTo(array));
+		const array = [];
+		const writer = new AMF3.Writer(Helpers.pushTo(array));
 		writer.write(Constants.INTEGER_MIN);
 		expect(array).toEqual([AMF3.Marker.INTEGER].concat([0xC0, 0x80, 0x80, 0x00]));
 	});
 	
 	// u8 marker, f64 double
 	it("can write double", function() {
-		var array = [];
-		var writer = new AMF3.Writer(Helpers.pushTo(array));
+		const array = [];
+		const writer = new AMF3.Writer(Helpers.pushTo(array));
 		writer.write(0.5);
 		expect(array).toEqual([AMF3.Marker.DOUBLE].concat(Constants.HALF));
 	});
 	
 	// u8 marker, u29 length/reference, f64 epochMilli
 	it("can write dates", function() {
-		var array = [];
-		var writer = new AMF3.Writer(Helpers.pushTo(array));
-		var date = new Date(1);
+		const array = [];
+		const writer = new AMF3.Writer(Helpers.pushTo(array));
+		const date = new Date(1);
 		writer.write(date); // by value 
 		writer.write(date); // by reference
 		expect(array).toEqual([].concat(
@@ -95,8 +95,8 @@ describe("AMF3.Writer", function() {
 	
 	// u8 marker, u29 length/reference * utf8 bytes
 	it("can write string", function() {
-		var array = [];
-		var writer = new AMF3.Writer(Helpers.pushTo(array));
+		const array = [];
+		const writer = new AMF3.Writer(Helpers.pushTo(array));
 		writer.write("€"); // by value
 		writer.write("€"); // by reference
 		expect(array).toEqual([].concat(
@@ -107,8 +107,8 @@ describe("AMF3.Writer", function() {
 	
 	// u8 marker, u29 length/reference * utf8 bytes
 	it("can write empty string", function() {
-		var array = [];
-		var writer = new AMF3.Writer(Helpers.pushTo(array));
+		const array = [];
+		const writer = new AMF3.Writer(Helpers.pushTo(array));
 		writer.write(""); // by value
 		writer.write(""); // by value
 		expect(array).toEqual([].concat(
@@ -119,9 +119,9 @@ describe("AMF3.Writer", function() {
 	
 	// u8 marker, u29 length/reference * values
 	it("can write array", function() {
-		var array = [];
-		var writer = new AMF3.Writer(Helpers.pushTo(array));
-		var data = [];
+		const array = [];
+		const writer = new AMF3.Writer(Helpers.pushTo(array));
+		const data = [];
 		data.push(data); // self reference
 		writer.write(data);
 		expect(array).toEqual([].concat(
@@ -132,9 +132,9 @@ describe("AMF3.Writer", function() {
 	
 	// u8 marker, empty traits, dynamic members
 	it("can write anonymous", function() {
-		var array = [];
-		var writer = new AMF3.Writer(Helpers.pushTo(array));
-		var data = {};
+		const array = [];
+		const writer = new AMF3.Writer(Helpers.pushTo(array));
+		const data = {};
 		data["property"] = data; // self reference
 		writer.write(data);
 		expect(array).toEqual([].concat(
@@ -145,9 +145,9 @@ describe("AMF3.Writer", function() {
 	
 	// u8 marker, traits, properties
 	it("can write typed", function() {
-		var array = [];
-		var writer = new AMF3.Writer(Helpers.pushTo(array));
-		var data = {};
+		const array = [];
+		const writer = new AMF3.Writer(Helpers.pushTo(array));
+		const data = {};
 		data["@name"] = "Name";
 		data["@properties"] = ["property"];
 		data["property"] = data; // self reference

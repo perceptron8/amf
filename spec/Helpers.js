@@ -11,7 +11,7 @@ class Helpers {
 	
 	static pushTo(array) {
 		return function(bytes) {
-			for (var byte of bytes) {
+			for (let byte of bytes) {
 				array.push(byte);
 			}
 		}

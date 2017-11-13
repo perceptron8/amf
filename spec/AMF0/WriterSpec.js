@@ -1,7 +1,6 @@
 "use strict";
 
-const _ = require("underscore");
-const _s = require("underscore.string");
+const _ = require("lodash");
 
 const AMF0 = require("../../lib/AMF0");
 const Helpers = require("../Helpers");
@@ -68,7 +67,7 @@ describe("AMF0.Writer", function() {
 	it("can write long string", function() {
 		const array = [];
 		const writer = new AMF0.Writer(Helpers.pushTo(array));
-		writer.write(_s.repeat(" ", 0x00010000));
+		writer.write(" ".repeat(0x00010000));
 		expect(array.slice(0, 6)).toEqual([AMF0.Marker.LONG_STRING].concat([0x00, 0x01, 0x00, 0x00], [0x20]));
 	});
 	

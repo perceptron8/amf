@@ -1,7 +1,6 @@
 "use strict";
 
-const _ = require("underscore");
-const _s = require("underscore.string");
+const _ = require("lodash");
 
 const AMF0 = require("../../lib/AMF0");
 const Helpers = require("../Helpers");

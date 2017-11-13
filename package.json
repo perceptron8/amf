@@ -1,13 +1,10 @@
 {
-  "name" : "amf",
-  "version" : "0.0.1",
-  "private": true,
-  "dependencies": {
-    "underscore" : "^1.8.3",
-    "text-encoding": "^0.5.2",
-    "number-encoding": "perceptron8/number-encoding"
-  },
-  "devDependencies": {
-    "underscore.string" : "^3.2.2"
-  }
+	"name": "amf",
+	"version": "0.0.2",
+	"private": true,
+	"dependencies": {
+		"lodash": "^4.17.4",
+		"text-encoding": "^0.6.4",
+		"number-encoding": "perceptron8/number-encoding"
+	}
 }

@@ -1,27 +1,24 @@
-"use strict";
+import { expect } from "chai";
+import { describe, it } from "node:test";
 
-const AMF = require("../lib/AMF");
-const AMF0 = require("../lib/AMF0");
-const AMF3 = require("../lib/AMF3");
-const Helpers = require("./Helpers");
+import { NumberEncoder } from "number-encoding";
+import * as AMF from "../src/AMF.js";
+import * as AMF0 from "../src/AMF0.js";
+import * as AMF3 from "../src/AMF3.js";
+import { Helpers } from "./Helpers.js";
 
-const TextEncoder = require("text-encoding").TextEncoder;
-const TextDecoder = require("text-encoding").TextDecoder;
-const NumberEncoder = require("number-encoding").NumberEncoder;
-const NumberDecoder = require("number-encoding").NumberDecoder;
-
-const utf8encoder = new TextEncoder("utf-8");
+const utf8encoder = new TextEncoder();
 const u16encoder = new NumberEncoder("Uint16");
 
 // test data
 
 const header = new AMF.Header("name", "value");
-const message = new AMF.Message("targetUri", "responseUri");
+const message = new AMF.Message("targetUri", "responseUri", undefined);
 const packet = new AMF.Packet([header], [message]);
 
 const UNKNOWN_LENGTH = [0xFF, 0xFF, 0xFF, 0xFF];
 
-const chunks = [].concat([
+const chunks = ([] as Iterable<number>[]).concat([
 	// version
 	u16encoder.encode(packet.version),
 	// headers (length)
@@ -46,25 +43,25 @@ const chunks = [].concat([
 	[AMF3.Marker.UNDEFINED]
 ]);
 
-const buffer = [];
-for (let chunk of chunks) {
-	for (let byte of chunk) {
+const buffer = [] as number[];
+for (const chunk of chunks) {
+	for (const byte of chunk) {
 		buffer.push(byte);
 	}
 }
 
 // expectations
 
-describe("AMF.Packet", function() {
-	it("can encode", function() {
-		const encoded = [];
+describe("AMF.Packet", () => {
+	it("can encode", () => {
+		const encoded = <any[]>[];
 		const push = Helpers.pushTo(encoded);
 		packet.encode(push);
-		expect(encoded).toEqual(buffer);
+		expect(encoded).to.deep.equal(buffer);
 	});
-	it("can decode", function() {
+	it("can decode", () => {
 		const pull = Helpers.pullFrom(buffer);
 		const decoded = AMF.Packet.decode(pull);
-		expect(decoded).toEqual(packet);
+		expect(decoded).to.deep.equal(packet);
 	});
 });

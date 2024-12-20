@@ -1,27 +1,27 @@
-"use strict";
+import { difference, isArray, isDate, isEmpty, isFunction, isNumber, isObject, isString } from "lodash-es";
 
-const _ = require("lodash");
-const assert = require("assert");
+import { NumberEncoder } from "number-encoding";
+import { assert } from "../utils/assert.js";
+import { Marker } from "./Marker.js";
 
-const TextEncoder = require("text-encoding").TextEncoder;
-const NumberEncoder = require("number-encoding").NumberEncoder;
-const utf8encoder = new TextEncoder("utf-8");
-const u8encoder = new NumberEncoder("Uint8");
-const u32encoder = new NumberEncoder("Uint32");
+const utf8encoder = new TextEncoder();
 const f64encoder = new NumberEncoder("Float64");
-
-const Marker = require("./Marker");
 
 const INTEGER_MIN = -Math.pow(2, 28);
 const INTEGER_MAX = +Math.pow(2, 28) - 1;
 
-const isSafe = function(number) {
+function isSafe(number: number) {
 	return INTEGER_MIN <= number && number <= INTEGER_MAX;
-};
+}
 
-class Writer {
-	constructor(push) {
-		assert(_.isFunction(push));
+export class Writer {
+	push: (data: Uint8Array) => void;
+	strings: Map<string, number>;
+	objects: Map<any, number>;
+	traits: Map<string, number>;
+
+	constructor(push: (data: Uint8Array) => void) {
+		assert(isFunction(push));
 		this.push = push;
 		// instance -> index
 		this.strings = new Map();
@@ -31,15 +31,15 @@ class Writer {
 		this.traits = new Map();
 	}
 	
-	writeByte(byte) {
+	writeByte(byte: number): void {
 		this.push(Uint8Array.of(byte));
 	}
 	
-	writeBytes(bytes) {
+	writeBytes(bytes: Iterable<number>): void {
 		this.push(Uint8Array.from(bytes));
 	}
 	
-	writeUnsignedInteger(number) {
+	writeUnsignedInteger(number: number): void {
 		if (number < 0x80) {
 			this.writeBytes([number]);
 		} else if (number < 0x4000) {
@@ -53,23 +53,23 @@ class Writer {
 		}
 	}
 	
-	writeSignedInteger(number) {
+	writeSignedInteger(number: number): void {
 		this.writeUnsignedInteger(number & 0x1FFFFFFF);
 	}
 	
-	writeDouble(number) {
+	writeDouble(number: number): void {
 		this.writeBytes(f64encoder.encode(number));
 	}
 	
-	writeString(string) {
-		if (!_.isEmpty(string)) {
+	writeString(string: string): void {
+		if (!isEmpty(string)) {
 			if (!this.strings.has(string)) {
 				this.strings.set(string, this.strings.size);
 				const bytes = utf8encoder.encode(string);
 				this.writeUnsignedInteger(bytes.length << 1 | 1);
 				this.writeBytes(bytes);
 			} else {
-				const reference = this.strings.get(string);
+				const reference = this.strings.get(string)!;
 				this.writeUnsignedInteger(reference << 1 | 0);
 			}
 		} else {
@@ -77,67 +77,67 @@ class Writer {
 		}
 	}
 	
-	writeDate(date) {
+	writeDate(date: Date): void {
 		if (!this.objects.has(date)) {
 			this.objects.set(date, this.objects.size);
 			const epochMilli = date.getTime();
 			this.writeUnsignedInteger(0 << 1 | 1);
 			this.writeDouble(epochMilli);
 		} else {
-			const reference = this.objects.get(date);
+			const reference = this.objects.get(date)!;
 			this.writeUnsignedInteger(reference << 1 | 0);
 		}
 	}
 	
-	writeArray(array) {
+	writeArray(array: any[]): void {
 		if (!this.objects.has(array)) {
 			this.objects.set(array, this.objects.size);
 			this.writeUnsignedInteger(array.length << 1 | 1);
 			// associative part
 			this.writeString("");
 			// dense part
-			for (let value of array) {
+			for (const value of array) {
 				this.write(value);
 			}
 		} else {
-			const reference = this.objects.get(array);
+			const reference = this.objects.get(array)!;
 			this.writeUnsignedInteger(reference << 1 | 0);
 		}
 	}
 	
-	writeObject(object) {
+	writeObject(object: any): void {
 		if (!this.objects.has(object)) {
 			this.objects.set(object, this.objects.size);
 			// inspect traits
-			const name = _.result(object, "@name", "");
-			const dynamic = _.result(object, "@dynamic", true);
-			const externalizable = _.result(object, "@externalizable", false);
-			const properties = _.result(object, "@properties", []);
+			const name = object["@name"] as string ?? "";
+			const dynamic = object["@dynamic"] as boolean ?? true;
+			const externalizable = object["@externalizable"] as boolean ?? false;
+			const properties = object["@properties"] as string[] ?? [];
 			// write traits
 			if (!this.traits.has(name)) {
 				this.traits.set(name, this.traits.size);
-				this.writeUnsignedInteger(properties.length << 4 | dynamic << 3 | externalizable << 2 | 0x03);
+				this.writeUnsignedInteger(properties.length << 4 | +dynamic << 3 | +externalizable << 2 | 0x03);
 				this.writeString(name);
 				// write property names
-				for (let property of properties) {
+				for (const property of properties) {
 					this.writeString(property);
 				}
 				// no empty string here
 			} else {
-				const reference = this.traits.get(name);
+				const reference = this.traits.get(name)!;
 				this.writeUnsignedInteger(reference << 2 | 0x01);
 			}
 			if (!externalizable) {
 				// write property values
-				for (let property of properties) {
+				for (const property of properties) {
 					assert(property[0] != "@");
 					this.write(object[property]);
 				}
 				// write dynamic members
 				if (dynamic) {
 					const keys = Object.keys(object);
-					const members = _.difference(keys, properties);
-					for (let member of members) {
+					const members = difference(keys, properties);
+					for (const member of members) {
 						if (member[0] != "@") {
 							this.writeString(member);
 							this.write(object[member]);	
@@ -157,12 +157,12 @@ class Writer {
 				}
 			}
 		} else {
-			const reference = this.objects.get(object);
+			const reference = this.objects.get(object)!;
 			this.writeUnsignedInteger(reference << 1 | 0);
 		}
 	}
 	
-	write(value) {
+	write(value: any): void {
 		if (value === null) {
 			this.writeByte(Marker.NULL);
 		} else if (value === undefined) {
@@ -171,7 +171,7 @@ class Writer {
 			this.writeByte(Marker.TRUE);
 		} else if (value === false) {
 			this.writeByte(Marker.FALSE);
-		} else if (_.isNumber(value)) {
+		} else if (isNumber(value)) {
 			if (Number.isInteger(value) && isSafe(value)) {
 				this.writeByte(Marker.INTEGER);
 				this.writeSignedInteger(value);
@@ -179,16 +179,16 @@ class Writer {
 				this.writeByte(Marker.DOUBLE);
 				this.writeDouble(value);
 			}
-		} else if (_.isString(value)) {
+		} else if (isString(value)) {
 			this.writeByte(Marker.STRING);
 			this.writeString(value);
-		} else if (_.isDate(value)) {
+		} else if (isDate(value)) {
 			this.writeByte(Marker.DATE);
 			this.writeDate(value);
-		} else if (_.isArray(value)) {
+		} else if (isArray(value)) {
 			this.writeByte(Marker.ARRAY);
 			this.writeArray(value);
-		} else if (_.isObject(value)) {
+		} else if (isObject(value)) {
 			this.writeByte(Marker.OBJECT);
 			this.writeObject(value);
 		} else {
@@ -196,5 +196,3 @@ class Writer {
 		}
 	}
 };
-
-module.exports = Writer;

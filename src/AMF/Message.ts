@@ -1,21 +1,23 @@
-"use strict";
+import { isString, isBoolean, isUndefined } from "lodash-es";
+import { assert } from "../utils/assert.js";
 
-const _ = require("lodash");
-const assert = require("assert");
+import * as AMF0 from "../AMF0.js";
+import * as AMF3 from "../AMF3.js";
 
-const AMF0 = require("../AMF0");
-const AMF3 = require("../AMF3");
+export class Message {
+	targetUri: string;
+	responseUri: string;
+	value: any;
 
-class Message {
-	constructor(targetUri, responseUri, value) {
-		assert(_.isString(targetUri));
-		assert(_.isString(responseUri));
+	constructor(targetUri: string, responseUri: string, value: any) {
+		assert(isString(targetUri));
+		assert(isString(responseUri));
 		this.targetUri = targetUri;
 		this.responseUri = responseUri;
 		this.value = value;
 	}
 	
-	encode(push) {
+	encode(push: (data: Uint8Array) => void): void {
 		const writer0 = new AMF0.Writer(push);
 		const writer3 = new AMF3.Writer(push);
 		writer0.writeRawString(this.targetUri);
@@ -26,7 +28,7 @@ class Message {
 		writer3.write(this.value);
 	}
 	
-	static decode(pull) {
+	static decode(pull: (length: number) => Uint8Array): Message {
 		const reader = new AMF0.Reader(pull);
 		const targetUri = reader.readRawString();
 		const responseUri = reader.readRawString();
@@ -36,5 +38,3 @@ class Message {
 		return new Message(targetUri, responseUri, value);
 	}
 }
-
-module.exports = Message;

@@ -1,80 +1,79 @@
-"use strict";
+import { isFunction } from "lodash-es";
+import { NumberDecoder } from "number-encoding";
+import { assert } from "../utils/assert.js";
 
-const _ = require("lodash");
-const assert = require("assert");
+import * as AMF3 from "../AMF3.js";
+import { Marker } from "./Marker.js";
 
-const TextDecoder = require("text-encoding").TextDecoder;
-const NumberDecoder = require("number-encoding").NumberDecoder;
 const utf8decoder = new TextDecoder("utf-8");
 const u16decoder = new NumberDecoder("Uint16");
 const u32decoder = new NumberDecoder("Uint32");
 const f64decoder = new NumberDecoder("Float64");
 
-const AMF3 = require("../AMF3");
+export class Reader {
+	pull: (length: number) => Uint8Array;
+	references: Map<number, any>;
 
-const Marker = require("./Marker");
-
-class Reader {
-	constructor(pull) {
-		assert(_.isFunction(pull));
+	constructor(pull: (length: number) => Uint8Array) {
+		assert(isFunction(pull));
 		this.pull = pull;
 		this.references = new Map();
 	}
 	
-	readRawByte() {
+	readRawByte(): number {
 		return this.pull(1)[0];
 	}
 	
-	readRawBytes(length) {
+	readRawBytes(length: number): Uint8Array {
 		return this.pull(length);
 	}
 	
-	readRawString() {
+	readRawString(): string {
 		const length = u16decoder.decode(this.readRawBytes(u16decoder.length));
 		const bytes = this.readRawBytes(length);
 		const string = utf8decoder.decode(bytes);
 		return string;
 	}
 	
-	readNull() {
+	readNull(): null {
 		return null;
 	}
 	
-	readUndefined() {
+	readUndefined(): undefined {
 		return undefined;
 	}
 	
-	readBoolean() {
+	readBoolean(): boolean {
 		return !!this.readRawByte();
 	}
 	
-	readNumber() {
+	readNumber(): number {
 		const bytes = this.readRawBytes(f64decoder.length);
 		const number = f64decoder.decode(bytes);
 		return number;
 	}
 	
-	readDate() {
+	readDate(): Date {
 		const bytes = this.readRawBytes(f64decoder.length);
 		const epochMilli = f64decoder.decode(bytes);
 		const date = new Date(epochMilli);
 		return date;
 	}
 	
-	readShortString() {
+	readShortString(): string {
 		const length = u16decoder.decode(this.readRawBytes(u16decoder.length));
 		const string = utf8decoder.decode(this.readRawBytes(length));
 		return string;
 	}
 	
-	readLongString() {
+	readLongString(): string {
 		const length = u32decoder.decode(this.readRawBytes(u32decoder.length));
 		const string = utf8decoder.decode(this.readRawBytes(length));
 		return string;
 	}
 	
-	readArray() {
-		const array = [];
+	readArray(): any[] {
+		const array = <any[]>[];
 		this.references.set(this.references.size, array);
 		const length = u32decoder.decode(this.readRawBytes(u32decoder.length));
 		for (let index = 0; index < length; index++) {
@@ -84,9 +83,9 @@ class Reader {
 		return array;
 	}
 	
-	readObject(typed) {
+	readObject(typed: boolean): any {
 		// create
-		const object = {};
+		const object = <any>{};
 		// remember
 		this.references.set(this.references.size, object);
 		// read class name
@@ -95,7 +94,7 @@ class Reader {
 			object["@name"] = name;
 		}
 		// read properties
-		for (let key = this.readRawString(); key != ""; key = this.readRawString()) {
+		for (let key = this.readRawString(); key !== ""; key = this.readRawString()) {
 			assert(key[0] != "@");
 			const value = this.read();
 			object[key] = value;
@@ -106,17 +105,17 @@ class Reader {
 		return object;
 	}
 	
-	readObjectPlus() {
+	readObjectPlus(): any {
 		const reader = new AMF3.Reader(this.pull);
 		return reader.read();
 	}
 	
-	readReference() {
+	readReference(): number {
 		const reference = u16decoder.decode(this.readRawBytes(u16decoder.length));
 		return this.references.get(reference);
 	}
 	
-	read() {
+	read(): any {
 		const marker = this.readRawByte();
 		switch (marker) {
 		case Marker.NULL:
@@ -148,5 +147,3 @@ class Reader {
 		}
 	}
 }
-
-module.exports = Reader;

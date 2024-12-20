@@ -1,35 +1,43 @@
-"use strict";
+import { isEmpty, isFunction } from "lodash-es";
+import { NumberDecoder } from "number-encoding";
+import { assert } from "../utils/assert.js";
+import { Marker } from "./Marker.js";
 
-const _ = require("lodash");
-const assert = require("assert");
-
-const TextDecoder = require("text-encoding").TextDecoder;
-const NumberDecoder = require("number-encoding").NumberDecoder;
 const utf8decoder = new TextDecoder("utf-8");
+
 const u8decoder = new NumberDecoder("Uint8");
-const u32decoder = new NumberDecoder("Uint32");
 const f64decoder = new NumberDecoder("Float64");
 
-const Marker = require("./Marker");
+interface Traits {
+	"@name": string;
+	"@externalizable": boolean;
+	"@dynamic": boolean;
+	"@properties": string[];
+}
 
-class Reader {
-	constructor(pull) {
-		assert(_.isFunction(pull));
+export class Reader {
+	pull: (length: number) => Uint8Array;
+	strings: Map<number, string>;
+	objects: Map<number, any>;
+	traits: Map<number, Traits>;
+
+	constructor(pull: (length: number) => Uint8Array) {
+		assert(isFunction(pull));
 		this.pull = pull;
 		this.strings = new Map();
 		this.objects = new Map();
 		this.traits = new Map();
 	}
 	
-	readByte() {
+	readByte(): number {
 		return this.pull(1)[0];
 	}
 	
-	readBytes(length) {
+	readBytes(length: number): Uint8Array {
 		return this.pull(length);
 	}
 	
-	readUnsignedInteger() {
+	readUnsignedInteger(): number {
 		const b0 = this.readByte();
 		if (!(b0 & 0x80)) return b0;
 		const b1 = this.readByte();
@@ -40,35 +48,35 @@ class Reader {
 		return (b0 & 0x7F) << 22 | ((b1 & 0x7F) << 15) | (b2 & 0x7F) << 8 | (b3 & 0xFF);
 	}
 	
-	readSignedInteger() {
+	readSignedInteger(): number {
 		const number = this.readUnsignedInteger();
 		// is sign extension needed?
 		return number & 0x010000000 ? number | 0xE0000000 : number;
 	};
 
-	readDouble() {
+	readDouble(): number {
 		const bytes = this.readBytes(f64decoder.length);
 		return f64decoder.decode(bytes);
 	};
 
-	readString() {
+	readString(): string {
 		const index = this.readUnsignedInteger();
 		if (index & 1) {
 			const length = index >> 1;
 			const bytes = this.readBytes(length);
 			const string = utf8decoder.decode(bytes);
-			if (!_.isEmpty(string)) {
+			if (!isEmpty(string)) {
 				this.strings.set(this.strings.size, string);
 			}
 			return string;
 		} else {
 			const reference = index >> 1;
 			assert(this.strings.has(reference));
-			return this.strings.get(reference);
+			return this.strings.get(reference)!;
 		}
 	};
 
-	readDate() {
+	readDate(): Date {
 		const index = this.readUnsignedInteger();
 		if (index & 1) {
 			const epochMilli = this.readDouble();
@@ -78,19 +86,19 @@ class Reader {
 		} else {
 			const reference = index >> 1;
 			assert(this.objects.has(reference));
-			return this.objects.get(reference);
+			return this.objects.get(reference)!;
 		}
 	};
 
-	readArray() {
+	readArray(): any[] {
 		const index = this.readUnsignedInteger();
 		if (index & 1) {
-			const array = [];
+			const array = <any[]>[];
 			this.objects.set(this.objects.size, array);
 			const length = index >> 1;
 			// associative part (must be empty)
 			const key = this.readString();
-			assert(key == "");
+			assert(isEmpty(key));
 			// dense part (must not be empty)
 			for (let i = 0; i < length; i++) {
 				const value = this.read();
@@ -104,15 +112,15 @@ class Reader {
 		}
 	};
 
-	readObject() {
+	readObject(): any {
 		const index = this.readUnsignedInteger();
 		if (index & 1 << 0) {
-			const object = {};
+			const object = <any> {};
 			this.objects.set(this.objects.size, object);
 			// read object
 			if (index & 1 << 1) {
 				// read traits
-				const traits = {};
+				const traits = <Traits>{};
 				this.traits.set(this.traits.size, traits);
 				const name = this.readString();
 				traits["@name"] = name;
@@ -124,17 +132,17 @@ class Reader {
 					const property = this.readString();
 					traits["@properties"].push(property);
 				}
-				_.extend(object, traits);
+				Object.assign(object, traits);
 			} else {
 				// get traits
 				const reference = index >> 2;
 				assert(this.traits.has(reference));
-				const traits = this.traits.get(reference);
-				_.extend(object, traits);
+				const traits = this.traits.get(reference)!;
+				Object.assign(object, traits);
 			}
 			if (!object["@externalizable"]) {
 				// read properties
-				for (let property of object["@properties"]) {
+				for (const property of object["@properties"]) {
 					assert(property[0] != "@");
 					const value = this.read();
 					object[property] = value;
@@ -167,7 +175,7 @@ class Reader {
 		}
 	};
 
-	read() {
+	read(): any {
 		const marker = u8decoder.decode(this.readBytes(u8decoder.length));
 		if (marker === Marker.NULL) {
 			return null;
@@ -194,5 +202,3 @@ class Reader {
 		}
 	};
 }
-
-module.exports = Reader;

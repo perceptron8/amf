@@ -1,4 +1,4 @@
-import { isString, isBoolean, isUndefined } from "lodash-es";
+import { isString } from "lodash-es";
 import { assert } from "../utils/assert.js";
 
 import * as AMF0 from "../AMF0.js";

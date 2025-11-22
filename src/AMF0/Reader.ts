@@ -1,5 +1,5 @@
 import { isFunction } from "lodash-es";
-import { NumberDecoder } from "number-encoding";
+import { NumberDecoder } from "@perceptron8/number-encoding";
 import { assert } from "../utils/assert.js";
 
 import * as AMF3 from "../AMF3.js";

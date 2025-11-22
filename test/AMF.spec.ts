@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { describe, it } from "node:test";
 
-import { NumberEncoder } from "number-encoding";
+import { NumberEncoder } from "@perceptron8/number-encoding";
 import * as AMF from "../src/AMF.js";
 import * as AMF0 from "../src/AMF0.js";
 import * as AMF3 from "../src/AMF3.js";

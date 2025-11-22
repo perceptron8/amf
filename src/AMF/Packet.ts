@@ -1,5 +1,5 @@
 import { isArray, isFunction, isNumber, isUndefined, range } from "lodash-es";
-import { NumberDecoder, NumberEncoder } from "number-encoding";
+import { NumberDecoder, NumberEncoder } from "@perceptron8/number-encoding";
 import { assert } from "../utils/assert.js";
 import { Header } from "./Header.js";
 import { Message } from "./Message.js";

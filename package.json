@@ -1,11 +1,13 @@
 {
-	"name": "amf",
-	"version": "0.0.2",
+	"name": "@perceptron8/amf",
+	"description": "AMF Reader/Writer",
+	"version": "0.1.0",
 	"type": "module",
-	"private": true,
+	"files": ["./lib/"],
+	"exports": "./lib/index.js",
 	"dependencies": {
-		"lodash-es": "4.17.21",
-		"number-encoding": "perceptron8/number-encoding"
+		"@perceptron8/number-encoding": "0.1.0",
+		"lodash-es": "4.17.21"
 	},
 	"devDependencies": {
 		"@types/chai": "5.2.3",
@@ -18,7 +20,7 @@
 		"node": ">=24.0.0"
 	},
 	"scripts": {
-		"prepare": "tsc",
+		"compile": "tsc",
 		"test": "node --test --import tsx './test/**/*.spec.ts'"
 	}
 }

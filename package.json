@@ -1,7 +1,7 @@
 {
 	"name": "@perceptron8/amf",
 	"description": "AMF Reader/Writer",
-	"version": "0.1.0",
+	"version": "0.1.1-dev",
 	"type": "module",
 	"files": ["./lib/"],
 	"exports": "./lib/index.js",

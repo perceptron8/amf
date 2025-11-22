@@ -18,6 +18,8 @@ jobs:
           registry-url: https://npm.pkg.github.com/
           scope: '@perceptron8'
       - run: npm install
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
       - run: npm run compile
       - run: npm run test
       - run: npm publish

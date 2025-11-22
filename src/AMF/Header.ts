@@ -1,7 +1,6 @@
-import { isString, isBoolean, isUndefined } from "lodash-es";
-import { assert } from "../utils/assert.js";
-
+import { isBoolean, isString, isUndefined } from "lodash-es";
 import * as AMF0 from "../AMF0.js";
+import { assert } from "../utils/assert.js";
 
 export class Header {
 	name: string;

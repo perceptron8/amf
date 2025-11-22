@@ -1,5 +1,5 @@
-import { isArray, isBoolean, isDate, isEmpty, isFunction, isNull, isNumber, isObject, isString, isUndefined } from "lodash-es";
 import { NumberEncoder } from "@perceptron8/number-encoding";
+import { isArray, isBoolean, isDate, isEmpty, isFunction, isNull, isNumber, isObject, isString, isUndefined } from "lodash-es";
 import { assert } from "../utils/assert.js";
 
 const utf8encoder = new TextEncoder();

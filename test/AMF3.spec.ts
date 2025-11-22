@@ -1,7 +1,6 @@
 import { expect } from "chai";
-import { describe, it } from "node:test";
-
 import { random } from "lodash-es";
+import { describe, it } from "node:test";
 import * as AMF3 from "../src/AMF3.js";
 import Constants from "./AMF3/Constants.js";
 import { Helpers } from "./Helpers.js";

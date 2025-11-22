@@ -1,6 +1,5 @@
-import { difference, isArray, isDate, isEmpty, isFunction, isNumber, isObject, isString } from "lodash-es";
-
 import { NumberEncoder } from "@perceptron8/number-encoding";
+import { difference, isArray, isDate, isEmpty, isFunction, isNumber, isObject, isString } from "lodash-es";
 import { assert } from "../utils/assert.js";
 import { Marker } from "./Marker.js";
 

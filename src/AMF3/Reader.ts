@@ -1,9 +1,9 @@
-import { isEmpty, isFunction } from "lodash-es";
 import { NumberDecoder } from "@perceptron8/number-encoding";
+import { isEmpty, isFunction } from "lodash-es";
 import { assert } from "../utils/assert.js";
 import { Marker } from "./Marker.js";
 
-const utf8decoder = new TextDecoder("utf-8");
+const utf8decoder = new TextDecoder("UTF-8");
 
 const u8decoder = new NumberDecoder("Uint8");
 const f64decoder = new NumberDecoder("Float64");

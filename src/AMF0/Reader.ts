@@ -1,11 +1,10 @@
-import { isFunction } from "lodash-es";
 import { NumberDecoder } from "@perceptron8/number-encoding";
-import { assert } from "../utils/assert.js";
-
+import { isFunction } from "lodash-es";
 import * as AMF3 from "../AMF3.js";
+import { assert } from "../utils/assert.js";
 import { Marker } from "./Marker.js";
 
-const utf8decoder = new TextDecoder("utf-8");
+const utf8decoder = new TextDecoder("UTF-8");
 const u16decoder = new NumberDecoder("Uint16");
 const u32decoder = new NumberDecoder("Uint32");
 const f64decoder = new NumberDecoder("Float64");

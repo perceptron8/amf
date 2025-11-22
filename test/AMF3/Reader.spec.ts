@@ -1,6 +1,5 @@
 import { expect } from "chai";
 import { describe, it } from "node:test";
-
 import * as AMF3 from "../../src/AMF3.js";
 import { concat, Helpers } from "../Helpers.js";
 import Constants from "./Constants.js";

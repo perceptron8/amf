@@ -1,6 +1,5 @@
 import { expect } from "chai";
 import { describe, it } from "node:test";
-
 import * as AMF0 from "../src/AMF0.js";
 
 describe("AMF0", () => {

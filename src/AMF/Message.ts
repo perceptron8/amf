@@ -1,8 +1,7 @@
 import { isString } from "lodash-es";
-import { assert } from "../utils/assert.js";
-
 import * as AMF0 from "../AMF0.js";
 import * as AMF3 from "../AMF3.js";
+import { assert } from "../utils/assert.js";
 
 export class Message {
 	targetUri: string;

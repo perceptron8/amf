@@ -10,15 +10,14 @@
 	"devDependencies": {
 		"@types/chai": "5.2.3",
 		"@types/lodash-es": "4.17.12",
-		"@types/node": "24.10.0",
-		"chai": "6.2.0",
+		"@types/node": "24.10.1",
+		"chai": "6.2.1",
 		"tsx": "4.20.6"
 	},
 	"engines": {
 		"node": ">=24.0.0"
 	},
 	"scripts": {
-		"postinstall": "tsc",
 		"test": "node --test --import tsx './test/**/*.spec.ts'"
 	}
 }
